@@ -93,19 +93,19 @@ def get_image(image_type=airsim.ImageType.Scene, camera_name='0', vehicle_name='
     获得前置摄像头渲染图像
     """
     response = client.simGetImage(camera_name, image_type, vehicle_name)
-    img_bgr = cv2.imdecode(np.array(bytearray(response), dtype='uint8'), cv2.IMREAD_UNCHANGED)  # type: ignore
+    img_bgr = cv2.imdecode(np.array(bytearray(response), dtype='uint8'), cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img_bgr, cv2.COLOR_RGBA2RGB)
     return img
 
 @tool
-def look(vehicle_name:str)->str:
+def look(visual_query:str, vehicle_name:str)->str:
     """
     获得前置摄像头渲染图像,并给出图像中主要物体列表。
     
     Args:
         vehicle_name: str: 无人机名称
     Returns:
-        str: 目标名称用英文逗号分隔
+        str: 返回视觉理解结果
     """
     # 读取图像
     rgb_image = get_image(vehicle_name=vehicle_name)
@@ -124,12 +124,14 @@ def look(vehicle_name:str)->str:
                             "type": "image_url",
                             "image_url": {"url": f"data:image/png;base64,{base64_image}"}
                         },
-                        {"type": "text", "text": "图片中有哪些目标，请给出名称即可，给出常见的，清晰可见的目标即可，多个目标名称之间用英文逗号分隔，例如：行人, 救护车, 摩托车。"}
+                        {"type": "text", "text": visual_query}
                     ]
                 }
             ]
         )
-    return completion.choices[0].message.content # type: ignore
+    return completion.choices[0].message.content
+
+    
 
 @tool
 def detect_objects(vehicle_name: str) -> str:
