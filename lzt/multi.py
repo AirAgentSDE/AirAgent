@@ -1,5 +1,5 @@
 from smolagents import CodeAgent, LiteLLMModel
-from airsim_wrapper import *
+from llc.airsim_wrapper import *
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
