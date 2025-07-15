@@ -17,27 +17,14 @@ class UAVPlanner:
     def __init__(self, ollama_url: str = "http://localhost:11434", model_name: str = "qwen3:8b"):
         self.ollama_url = ollama_url
         self.model_name = model_name
-        self.action_base = self._define_action_base()
         
-    def _define_action_base(self) -> Dict:
-        """Define the available actions"""
-        return {
-        }
     
     def _create_prompt(self, task: str) -> str:
         """Create a structured prompt for the LLM"""
-        # Build prompt in parts for better readability
-        intro = """ """
-        task = f""
-        actions = f""
-        requirements = """
-
-"""
-        prompt = intro + task + actions + requirements + " "
-        return prompt
+    pass
     
 
-    def _call_ollama(self, prompt: str) -> Any:
+    def _call_ollama(self, prompt: str) -> str:
         """Make API call to Ollama"""
         
         response = chat(
@@ -52,13 +39,14 @@ class UAVPlanner:
             }
         )
         response = response.message['content']
-        return 
+        return response
+
     
 
-    def generate_plan(self, task_description: str) -> List[Action]:
+    def generate_plan(self, task: str) -> str:
         """Generate a UAV action plan for the given task"""        
         # Create prompt
-        prompt = self._create_prompt(task_description)
+        prompt = self._create_prompt(task)
         
         # Call LLM
         response = self._call_ollama(prompt)
@@ -70,15 +58,12 @@ def main():
         # Initialize planner
         planner = UAVPlanner(
             ollama_url="http://localhost:11434",
-            model_name="deepseek-r1:8b-0528-qwen3-fp16"
+            model_name="qwen3:8b"
         )
         
         # Example tasks
         example_tasks = [
-            "检查风力发电机是否遭到破坏",
-            "在森林区域内搜索失踪的人",
-            "检查一条河流沿岸的污染情况，从(10, 20)到(50, 60)的矩形区域进行检查",
-            "最近的船只在哪里？",
+            
         ]
         
         print("无人机正在待命，准备执行任务。")
