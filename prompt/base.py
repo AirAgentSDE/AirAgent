@@ -1,8 +1,3 @@
-from os import path
-import os
-
-
-
 path = "prompt/api.py"
 
 with open(path, encoding="utf-8") as f:
