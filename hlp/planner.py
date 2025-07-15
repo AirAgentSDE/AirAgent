@@ -2,13 +2,11 @@
 无人机任务规划器
 '''
 
-
 from typing import List, Dict, Any
-from enum import Enum
-from pydantic import BaseModel, dataclasses
 from ollama import chat
 import json
 import traceback
+from prompt.base import BASE_SYSTEM_INSTRUCTIONS
 
 
 class UAVPlanner:
@@ -21,15 +19,19 @@ class UAVPlanner:
     
     def _create_prompt(self, task: str) -> str:
         """Create a structured prompt for the LLM"""
-    pass
-    
+        
 
     def _call_ollama(self, prompt: str) -> str:
         """Make API call to Ollama"""
         
         response = chat(
             model = self.model_name,
-            messages = [{
+            messages = [
+            {
+                'role': 'system',
+                'content': BASE_SYSTEM_INSTRUCTIONS
+            },            
+            {
                 'role': 'user',
                 'content': prompt
             }],
@@ -38,8 +40,8 @@ class UAVPlanner:
                 'seed': 42
             }
         )
-        response = response.message['content']
         return response
+
 
     
 

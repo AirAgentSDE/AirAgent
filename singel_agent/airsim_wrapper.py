@@ -72,7 +72,7 @@ def landVehicle(vehicle_name:str="Drone1") -> str:
 
 
 @tool
-def fly_to_point(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> str:
+def moveVehicleTo(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> str:
     """
     飞到某个坐标点。
     
@@ -142,7 +142,7 @@ def get_image(image_type=airsim.ImageType.Scene, camera_name='front_center', veh
     return img
 
 @tool
-def queryObject(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_center") -> str:
+def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_center") -> str:
     """
     获得前置摄像头渲染图像，并查询视觉语言模型。
     

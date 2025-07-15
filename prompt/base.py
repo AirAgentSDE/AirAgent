@@ -1,3 +1,14 @@
+from os import path
+import os
+
+
+
+path = "prompt/api.py"
+
+with open(path, encoding="utf-8") as f:
+    api = f.readlines()
+api = "".join(api[3:])
+
 BASE_SYSTEM_INSTRUCTIONS = ('''
 # 角色
     - 你是一个无人机任务规划器，你非常擅于理解用户的任务指令，并且根据任务指令创建无人机行动计划。
@@ -15,9 +26,10 @@ BASE_SYSTEM_INSTRUCTIONS = ('''
     - 创建的行动轨迹以JSON格式返回，示例如下：
         ```
         {
-                            
-                            
-                            
+        "primary_goal": "根据用户的任务指令提取的任务目标",                 
+        "relevant_objects": "环境地图中与任务目标有关的物体对象",                    
+        "action": "无人机需要执行的动作",
+        "reasoning": "无人机执行动作的推理过程"
         }                    
         ```
 
@@ -29,18 +41,19 @@ BASE_SYSTEM_INSTRUCTIONS = ('''
             "objects": [
                             {
                                 "name": "目标1",
-                                "position": [10, 20, 30]
+                                "position": [x1, y1, z1]
                             },
                             {
                                 "name": "目标2",
-                                "position": [40, 50, 60]
+                                "position": [x2, y2, z2]
                             }
                         ],
                             
         }                    
         ```
-                   
-
-                   
+                                              
 '''
-)
+) + api
+
+print(BASE_SYSTEM_INSTRUCTIONS)
+print(api)
