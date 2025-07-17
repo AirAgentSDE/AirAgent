@@ -19,7 +19,6 @@ class UAVPlanner:
     
     def _call_ollama(self, prompt: str) -> str:
         """Make API call to Ollama"""
-        
         response = chat(
             model = self.model_name,
             messages = [
@@ -40,7 +39,6 @@ class UAVPlanner:
         output = content.split('```json')[1].split('```')[0].strip()
         return output
     
-
 def main():
     # Initialize planner
     planner = UAVPlanner(
@@ -50,7 +48,6 @@ def main():
     task = input("Enter the UAV task description: ")
     res = planner._call_ollama(task)
     print(res)
-
 
 
 if __name__ == "__main__":

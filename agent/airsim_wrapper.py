@@ -5,8 +5,6 @@ import cv2
 import base64
 from typing import List, Tuple
 from openai import OpenAI
-import time
-
 
 
 # 目标物体名称-UE mesh name 对应词典

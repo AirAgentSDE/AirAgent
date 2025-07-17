@@ -2,21 +2,19 @@
 An agentic UAV system
 
 ## components
-The system take a plan-act architecture(Erdogan et al., 2025),
-consists of three components: a high level planner, a low level controller, and a semantic mapper
-
+The system take plan-act architecture(Erdogan et al., 2025)
 
 ### high level planner
-Creating a step by step plan for the UAV agent to follow
-see `hlp/planner.py` for more details
+Creating a step by step plan for the UAV agent to follow,
+see `planner` for more details
 
-### low level controller
-Controlling the UAV agent to follow the plan
-see `llc` for more details
+### low level actor
+Controlling the UAV agent to follow the plan,
+see `agent` for more details
 
 ### semantic mapper
-Mapping the surrounding environment to a graph representation dictionary
-provided to low level controller, to ensure the generated plan is grounded
+Mapping the surrounding environment to a graph representation JSON,
+provided to low level actor, to ensure the generated plan is grounded,
 see `mapper` for more details
 
 ## file structure

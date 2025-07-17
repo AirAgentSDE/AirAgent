@@ -1,4 +1,4 @@
-path = "hlp/prompt/api.py"
+path = "planner/prompt/api.py"
 
 with open(path, encoding="utf-8") as f:
     api = f.readlines()
@@ -50,4 +50,4 @@ BASE_SYSTEM_INSTRUCTIONS = ('''
         ```
                                               
 '''
-) + api.strip() + "/no_think"
+).strip() + api.strip() + "/no_think"
