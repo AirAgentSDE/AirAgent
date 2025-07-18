@@ -71,7 +71,7 @@ def landVehicle(vehicle_name:str="Drone1") -> bool:
 
 
 @tool
-def fly_to_point(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> None:
+def moveVehicleTo(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> None:
     """
     飞到某个坐标点。
     
@@ -86,24 +86,21 @@ def fly_to_point(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> 
         client.moveToPositionAsync(point[0], point[1], point[2], 5, vehicle_name=vehicle_name).join()
 
 
-@tool
-def fly_by_path(points: List[List[float]], vehicle_name: str = "Drone1") -> None:
-    """
-    飞过指定路径。
-
-    Args:
-        points: 待飞行的路径，每个元素是一个包含三维坐标（x/y/z）的数组
-        vehicle_name: 无人机名称, 默认为 "Drone1"
-
-    """
-    
-    airsim_points = []
-    for point in points:
-        if point[2] > 0:
-            airsim_points.append(airsim.Vector3r(point[0], point[1], -point[2]))
-        else:
-            airsim_points.append(airsim.Vector3r(point[0], point[1], point[2]))
-    client.moveOnPathAsync(airsim_points, 5, 120, airsim.DrivetrainType.ForwardOnly, airsim.YawMode(False, 0), 20, 1, vehicle_name).join()
+# @tool
+# def fly_by_path(points: List[List[float]], vehicle_name: str = "Drone1") -> None:
+#     """
+#     飞过指定路径
+#     Args:
+#         points: 待飞行的路径，每个元素是一个包含三维坐标（x/y/z）的数组
+#         vehicle_name: 无人机名称, 默认为 "Drone1"
+#     """
+#     airsim_points = []
+#     for point in points:
+#         if point[2] > 0:
+#             airsim_points.append(airsim.Vector3r(point[0], point[1], -point[2]))
+#         else:
+#             airsim_points.append(airsim.Vector3r(point[0], point[1], point[2]))
+#     client.moveOnPathAsync(airsim_points, 5, 120, airsim.DrivetrainType.ForwardOnly, airsim.YawMode(False, 0), 20, 1, vehicle_name).join()
 
 
 def cv2_to_base64(image, format='.png'):
@@ -126,7 +123,7 @@ def get_image(image_type=airsim.ImageType.Scene, camera_name='front_center', veh
     return img
 
 @tool
-def queryObject(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_center") -> str:
+def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_center") -> str:
     """
     向视觉语言模型提问以获得更多环境信息或对象细节。
     

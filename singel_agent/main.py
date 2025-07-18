@@ -10,7 +10,7 @@ model = LiteLLMModel(
 )
 
 
-agent = CodeAgent(tools=[takeOffVehicle, landVehicle, fly_to_point, fly_by_path, turn_to, queryObject, get_object_position], model=model,
+agent = CodeAgent(tools=[takeOffVehicle, landVehicle, moveVehicleTo, turn_to, inspect, get_object_position], model=model,
                   instructions = """
 You are a helpful assistant for controlling drones in an AirSim environment.
 

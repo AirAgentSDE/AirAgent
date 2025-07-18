@@ -17,13 +17,13 @@ def landVehicle(vehicle_name:str) -> bool:
 def moveVehicleTo(vehicle_name:str, position:Tuple[float,float,float]) -> None:
     '''
     移动无人机到指定坐标，坐标基于NED坐标系
-    如果takeOffVehicle不为True，则需先起飞再移动
+    如果takeOffVehicle不为True，则应当先起飞再移动
     '''
 
 def rotateVehicleTo(vehicle_name:str, yaw:float) -> float:
     '''
     旋转无人机到指定角度
-    如果takeOffVehicle不为True，则需先起飞再旋转
+    如果takeOffVehicle不为True，则应当先起飞再旋转
     返回旋转后的角度
     '''
 
@@ -35,12 +35,12 @@ def inspect(vehicle_name:str, visual_query:str) -> str:
 
 def lookFor(vehicle_name:str, object_name:str) -> Tuple[float,float,float]:
     '''
-    无人机查找指定目标
-    返回目标的坐标
+    无人机查找指定目标，目标物体名称必须是无装饰的英文物体类型，例如"car"或"crowd"
+    返回目标物的坐标
     '''
 
 def get_objecct_position(object_name:str) -> Tuple[float,float,float]:
     '''
-    获取环境地图中物体的坐标
+    获取环境地图中物体的坐标，物体名称必须是无装饰的英文物体类型，例如"car"或"crowd"
     返回物体的坐标
     '''

@@ -31,8 +31,10 @@ class UAVPlanner:
                 'content': prompt
             }],
             options = {
-                'temporature': 0.4,
-                'seed': 42
+                'temporature': 0.2,
+                'top_p': 0.6,
+                'top_k': 40,
+                'seed' : 42
             }
         )
         content = response.message.content
@@ -45,9 +47,10 @@ def main():
         ollama_url="http://localhost:11434",
         model_name="qwen3:32b"  # or "qwen3:8b" for smaller model
     )
-    task = input("Enter the UAV task description: ")
+    task = input("请输入您的任务指令：")
     res = planner._call_ollama(task)
     print(res)
+    return res
 
 
 if __name__ == "__main__":
