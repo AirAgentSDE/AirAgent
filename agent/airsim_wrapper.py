@@ -5,13 +5,15 @@ import cv2
 import base64
 from typing import List, Tuple
 from openai import OpenAI
+import pprint
+
 
 
 # 目标物体名称-UE mesh name 对应词典
 # 只在airsim inspection场景中生效
 objects_dict = {
-    "turbine1": "BP_Wind_Turbines_C_1",
-    "turbine2": "StaticMeshActor_2",
+    "wind_turbine1": "BP_Wind_Turbines_C_1",
+    "wind_turbine2": "StaticMeshActor_2",
     "solarpanels": "StaticMeshActor_146",
     "crowd": "StaticMeshActor_6",
     "car": "StaticMeshActor_10",
@@ -29,35 +31,31 @@ vlm_client = OpenAI(
 
 
 # 连接到AirSim客户端
-drone_list = ['Drone1', 'Drone2', 'Drone3', 'Drone4'] # 无人机集群
-for drone in drone_list:
-    client = airsim.MultirotorClient()
-    client.confirmConnection()
-    client.enableApiControl(True, vehicle_name=drone)
-    client.armDisarm(True, vehicle_name=drone)
-
+client = airsim.MultirotorClient()
+client.confirmConnection()
 
 
 @tool
-def takeOffVehicle(vehicle_name:str="Drone1") -> bool:
+def takeOffVehicle(vehicle_name:str="Drone1") -> str:
     """
-    起飞无人机。返回布尔值，表示动作是否成功。
+    起飞无人机。返回成功状态信息，表示动作是否成功。
 
     Args:
         vehicle_name: 无人机名称，默认为"Drone1"
     
     """
     try:
+        client.enableApiControl(True, vehicle_name=vehicle_name)
+        client.armDisarm(True, vehicle_name=vehicle_name)
         client.takeoffAsync(vehicle_name=vehicle_name).join()
-        return True
+        return "success" 
     except Exception:
-        return False
-
+        return "failed"
 
 @tool
-def landVehicle(vehicle_name:str="Drone1") -> bool:
+def landVehicle(vehicle_name:str="Drone1") -> str:
     """
-    降落无人机。返回为布尔值，表示动作是否成功。
+    降落无人机。返回成功状态信息，表示动作是否成功。
 
     Args:
         vehicle_name: 无人机名称，默认为"Drone1"
@@ -65,10 +63,9 @@ def landVehicle(vehicle_name:str="Drone1") -> bool:
     """
     try:
         client.landAsync(vehicle_name=vehicle_name).join()
-        return True
+        return "success"
     except Exception:
-        return False
-
+        return "failed"
 
 @tool
 def moveVehicleTo(point: Tuple[float,float,float], vehicle_name:str="Drone1") -> None:
@@ -85,22 +82,18 @@ def moveVehicleTo(point: Tuple[float,float,float], vehicle_name:str="Drone1") ->
     else:
         client.moveToPositionAsync(point[0], point[1], point[2], 5, vehicle_name=vehicle_name).join()
 
+@tool
+def turn_to(yaw: float, vehicle_name: str = "Drone1") -> float:
+    """
+    调整无人机朝向角度。
 
-# @tool
-# def fly_by_path(points: List[List[float]], vehicle_name: str = "Drone1") -> None:
-#     """
-#     飞过指定路径
-#     Args:
-#         points: 待飞行的路径，每个元素是一个包含三维坐标（x/y/z）的数组
-#         vehicle_name: 无人机名称, 默认为 "Drone1"
-#     """
-#     airsim_points = []
-#     for point in points:
-#         if point[2] > 0:
-#             airsim_points.append(airsim.Vector3r(point[0], point[1], -point[2]))
-#         else:
-#             airsim_points.append(airsim.Vector3r(point[0], point[1], point[2]))
-#     client.moveOnPathAsync(airsim_points, 5, 120, airsim.DrivetrainType.ForwardOnly, airsim.YawMode(False, 0), 20, 1, vehicle_name).join()
+    Args:
+        yaw: 偏航角，单位为弧度
+        vehicle_name: 无人机名称，默认为"Drone1"
+    
+    """
+    client.rotateToYawAsync(yaw, 5, vehicle_name=vehicle_name).join()
+    return yaw
 
 
 def cv2_to_base64(image, format='.png'):
@@ -121,6 +114,7 @@ def get_image(image_type=airsim.ImageType.Scene, camera_name='front_center', veh
     img_bgr = cv2.imdecode(np.array(bytearray(response), dtype='uint8'), cv2.IMREAD_UNCHANGED) # BGR
     img = cv2.cvtColor(img_bgr, cv2.COLOR_RGBA2RGB) # RGB
     return img
+
 
 @tool
 def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_center") -> str:
@@ -170,24 +164,39 @@ def get_object_position(object_name:str) -> Tuple[float, float, float]:
     '''
     object_name = object_name.lower()
     query_string = objects_dict[object_name] + ".*"
-    object_names_ue =[]
+    object_names_ue = []
     while len(object_names_ue) == 0:
         object_names_ue = client.simListSceneObjects(query_string)
     pose = client.simGetObjectPose(object_names_ue[0])
+    if pose is None:
+        raise ValueError(f"无法获取物体 {object_name} 的位置，请检查地图中是否存在该物体。")
     return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
 
-
 @tool
-def turn_to(yaw: float, vehicle_name: str = "Drone1") -> float:
+def lookFor(object_name: str, camera_name: str, image_type: str, vehicle_name: str) -> Tuple[float, float, float]:
     """
-    调整无人机朝向角度。
+    查找指定目标物体的位置。
 
     Args:
-        yaw: 偏航角，单位为弧度
-        vehicle_name: 无人机名称，默认为"Drone1"
-    
+        object_name: 目标物体名称
+        camera_name: 相机位置
+        image_type: 图像类型
+        vehicle_name: 无人机名称
     """
-    client.rotateToYawAsync(yaw, 5, vehicle_name=vehicle_name).join()
-    return yaw
+    client.simSetDetectionFilterRadius(camera_name, image_type, radius_cm = 500*900, vehicle_name=vehicle_name)
+    client.simClearDetectionMeshNames(camera_name, image_type, vehicle_name)
+    client.simAddDetectionFilterMeshName(camera_name, image_type, mesh_name=f"*{object_name}*", vehicle_name=vehicle_name)
+    while True:
+        rawImage = get_image(image_type, camera_name, vehicle_name)
+        if not rawImage:
+            continue
+        png = cv2.imdecode(airsim.string_to_uint8_array(rawImage), cv2.IMREAD_UNCHANGED)
+        objects = client.simGetDetections(camera_name, image_type)
+        if objects:
+            for object in objects:
+                s = pprint.pformat(object)
+                print("detected: %s" %s)
 
-    
+                cv2.rectangle(png,(int(object.box2D.min.x_val),int(object.box2D.min.y_val)),(int(object.box2D.max.x_val),int(object.box2D.max.y_val)),(255,0,0),2)
+                cv2.putText(png, object.name, (int(object.box2D.min.x_val), int(object.box2D.min.y_val - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (36,255,12))
+        cv2.imshow("AirSim", png)

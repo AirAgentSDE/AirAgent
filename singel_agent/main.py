@@ -4,7 +4,7 @@ from airsim_wrapper import *
 
 
 model = LiteLLMModel(
-    model_id = "ollama_chat/qwen3:8b",
+    model_id = "ollama/qwen3:8b",
     api_base = "http://localhost:11434",
 
 )
