@@ -28,9 +28,9 @@
 *   **smolagents**: 用于构建 LLM 驱动的代理和工具。
 *   **OpenAI Python SDK**: 用于与 Ollama 提供的 LLM API 交互。
 
-# 构建与运行
+## 构建与运行
 
-## 环境准备
+### 环境准备
 
 1.  安装并运行 [AirSim](https://microsoft.github.io/AirSim/) 仿真环境。
 2.  安装并运行 [Ollama](https://ollama.com/)，并拉取所需的模型：
@@ -44,7 +44,7 @@
     *   `numpy`
     *   `opencv-python`
 
-## 运行项目
+### 运行项目
 
 1.  确保 AirSim 和 Ollama 服务正在运行。
 2.  在项目根目录下执行主程序：
@@ -53,11 +53,7 @@
     ```
 3.  根据提示输入任务指令，系统将自动生成计划并控制无人机执行。
 
-## 测试
-
-*   项目包含一个测试文件 `test_planner_actor.py`，通常可以通过运行此文件来执行测试。
-
-# 开发约定
+### 开发约定
 
 *   **语言**: 主要使用 Python。
 *   **架构**: 采用计划-执行架构，分离高层规划与低层执行。
