@@ -1,78 +1,97 @@
 '''
-无人机任务规划器
+UAV Task Planner
 '''
 
-
-from ollama import chat
+from openai import OpenAI
 from planner.prompt.base import BASE_SYSTEM_INSTRUCTIONS
 import json
 
 
 class UAVPlanner:
-    '''main class for UAV planning'''
-    
-    def __init__(self, ollama_url: str = "http://localhost:11434", model_name: str = "qwen3:32b"):
+    '''Main class for UAV planning'''
+    def __init__(self, ollama_url: str = "http://:11434/v1", model_name: str = "qwen3:32b"):
         self.ollama_url = ollama_url
         self.model_name = model_name
-        
-    
-    def _call_ollama(self, prompt: str) -> str:
-        """Make API call to Ollama"""
-        response = chat(
-            model = self.model_name,
-            messages = [
-            {
-                'role': 'system',
-                'content': BASE_SYSTEM_INSTRUCTIONS
-            },
-            {
-                'role': 'user',
-                'content': prompt
-            }],
-            options = {
-                'temporature': 0.2,
-                'top_p': 0.6,
-                'top_k': 40,
-                'seed' : 42
-            }
+        self.client = OpenAI(base_url=ollama_url, api_key="ollama")
+        self.system_instructions = BASE_SYSTEM_INSTRUCTIONS
+
+    def query_llm(self, prompt: str) -> str:
+        """
+        Query the LLM with the given prompt.
+
+        Args:
+            prompt (str): The prompt to query the LLM with.
+
+        Returns:
+            str: The response from the LLM.
+        """
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[
+                {"role": "system", "content": self.system_instructions},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2048,
+            temperature=1
         )
-        content = response.message.content
-        output = content.split('```json')[1].split('```')[0].strip()
-        # Use the is_valid_json function to check and parse JSON
-        output = is_valid_json(output)
-        if output is None:
-            raise ValueError("Invalid JSON format in response")
-        return output
+        return response.choices[0].message.content.strip()
+        
+    def generate_plan(self, task: str) -> dict:
+        """
+        Generate a detailed plan with mission, current step, and to-do list for the UAV agent to execute.
 
+        Args:
+            task (str): The high-level task description from the user.
 
-def is_valid_json(json_str: str):
-    """
-    Check if a given string is in a valid JSON structure.
-
-    Args:
-        json_str (str): The string to be checked.
-
-    Returns:
-        dict or list or None: The parsed JSON object if the string is valid, None otherwise.
-    """
-    try:
-        obj = json.loads(json_str)
-        return obj
-    except json.JSONDecodeError:
-        return None
-
-
-def main():
-    # Initialize planner
-    planner = UAVPlanner(
-        ollama_url="http://localhost:11434",
-        model_name="qwen3:32b"  # or "qwen3:8b" for smaller model
-    )
-    task = input("请输入您的任务指令：")
-    res = planner._call_ollama(task)
-    print(res)
-    return res
-
-
-if __name__ == "__main__":
-    main()
+        Returns:
+            dict: A detailed plan containing mission, current step, and to-do list.
+        """
+        # Create the prompt for the LLM
+        prompt = f"""
+        Given the task: {task}
+        
+        Please provide your reasoning in a Socratic Q&A format, followed by a detailed plan in JSON format.
+        Make sure to break down your given mission into subgoals, and identify the smallest sub-task that can't be broken down further.
+        Use the action space: takeoff, land, move_to, turn_to, inspect, look_for.
+        """
+        
+        # Query the LLM to get the plan
+        llm_response = self.query_llm(prompt)
+        
+        # Try to extract JSON from the response
+        try:
+            # Find the JSON part in the response (between [Plan] markers or braces)
+            plan_start = llm_response.find('[Plan]')
+            if plan_start != -1:
+                # Extract everything after [Plan]
+                json_str = llm_response[plan_start + 6:].strip()
+                # Find the first opening brace and last closing brace
+                start = json_str.find('{')
+                end = json_str.rfind('}') + 1
+                if start != -1 and end > start:
+                    json_str = json_str[start:end]
+            else:
+                # If no [Plan] marker, try to find JSON directly
+                start = llm_response.find('{')
+                end = llm_response.rfind('}') + 1
+                if start != -1 and end > start:
+                    json_str = llm_response[start:end]
+                else:
+                    raise ValueError("No JSON found in response")
+            
+            plan = json.loads(json_str)
+            return plan
+        except (json.JSONDecodeError, ValueError) as e:
+            # If JSON parsing fails, create a basic plan structure
+            return {
+                "mission": task,
+                "current_step": {
+                    "description": "Take off the drone",
+                    "action": {
+                        "type": "takeoff",
+                        "vehicle": "Drone1"
+                    }
+                },
+                "to_do_list": [
+                ]
+            }

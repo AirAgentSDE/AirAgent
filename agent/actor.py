@@ -4,7 +4,6 @@ from agent.airsim_wrapper import *
 import json
 
 
-
 class UAVAgent:
     """
     A UAV agent that interacts with the AirSim environment.
@@ -20,11 +19,11 @@ class UAVAgent:
             api_base=self.api_base,
         )
 
-        agent = CodeAgent(tools=[takeOffVehicle, landVehicle, moveVehicleTo, turn_to, inspect, lookFor, get_object_position], model=model,
+        agent = CodeAgent(tools=[take_off_vehicle, land_vehicle, move_vehicle_to, turn_to, inspect, look_for], model=model,
                           additional_authorized_imports=["math", "time", "numpy"],
                           instructions="""
 You are a helpful assistant for controlling drones in an AirSim environment.
-You should follow an action plan provided to you, and execute the actions step by step.
+You should follow an mission plan provided to you, and complete the tasks step by step.
 when refer to a object_name or vehicle_name, always call in English, such as "turbine1", "solarpanels", "car", "crowd",
 if you get a name in other language, please translate it to English first.
 
@@ -35,10 +34,14 @@ if you get a name in other language, please translate it to English first.
         if isinstance(prompt, str):
             prompt = [prompt]
         elif isinstance(prompt, dict):
-            prompt = f"note your primary_goal: {prompt['primary_goal']}\
-            given relevant_objects: {prompt['relevant_objects']}\
-            what you should do: {prompt['reasoning']}\
-            execute the following plan step by step: {prompt['plan']}"
+            # Check if the plan has the old format with 'plan' key
+            if 'plan' in prompt:
+                prompt = f"note your mission: {prompt['mission']}\n                given relevant_objects: {prompt['relevant_objects']}\n                what you should do: {prompt['reasoning']}\n                execute the following plan step by step: {prompt['plan']}"
+            # Check if the plan has the new format with 'subgoals' key
+            elif 'subgoals' in prompt:
+                prompt = f"note your mission: {prompt['mission']}\n                execute the following subgoals step by step: {prompt['subgoals']}"
+            else:
+                raise ValueError("Parsed prompt is not in a valid format. Expected 'plan' or 'subgoals' key in dict.")
         else:
             raise ValueError("Parsed prompt is not in a valid format. Expected str or dict.")
         return agent.run(prompt)
