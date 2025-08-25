@@ -4,6 +4,7 @@ UAV Task Planner
 
 from openai import OpenAI
 from planner.prompt.base import BASE_SYSTEM_INSTRUCTIONS
+from planner.prompt.example import example1, example2
 import json
 
 
@@ -46,13 +47,19 @@ class UAVPlanner:
         Returns:
             dict: A detailed plan containing mission, current step, and to-do list.
         """
-        # Create the prompt for the LLM
+        # Create the prompt for the LLM with examples
         prompt = f"""
         Given the task: {task}
         
         Please provide your reasoning in a Socratic Q&A format, followed by a detailed plan in JSON format.
-        Make sure to break down your given mission into subgoals, and identify the smallest sub-task that can't be broken down further.
+        Make sure to break down your given mission into subgoals, and determine the most appropriate first action to begin the mission.
         Use the action space: takeoff, land, move_to, turn_to, inspect, look_for.
+        
+        Here are some examples of how to structure your response:
+        
+        {example1}
+        
+        {example2}
         """
         
         # Query the LLM to get the plan

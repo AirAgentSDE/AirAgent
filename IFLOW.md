@@ -1,65 +1,101 @@
-# 项目概述
+# UAV Agent System - Developer Guide
 
-本项目是一个基于计划-执行架构（plan-act architecture）的无人机代理系统（UAV Agent System），旨在通过高层规划器生成任务计划，并由低层执行器控制无人机完成具体动作。
+This document serve as context for coding agent to take over the project development.
+The system uses a plan-act architecture with a high-level planner generating mission plans and a low-level actor executing actions in an AirSim environment.
 
-## 核心组件
+## System Architecture
 
-1.  **高层规划器 (High-level Planner)**
-    *   位于 `planner/` 目录。
-    *   负责根据用户输入的任务指令，生成详细的执行计划。
-    *   使用较重的 LLM 模型（如 qwen3:32b）进行复杂推理和规划。
-    *   规划结果通常是一个包含主要目标和子目标的 JSON 结构。
+The system follows a plan-act architecture:
+1. **High-level Planner**: Generates detailed mission plans using a sophisticated LLM (qwen3:32b)
+2. **Low-level Actor**: Executes actions in AirSim using a lightweight LLM (qwen3:8b)
+3. **Semantic Mapper** (planned): Will provide environmental context as graph structures
 
-2.  **低层执行器 (Low-level Actor)**
-    *   位于 `agent/` 目录。
-    *   负责解析高层规划器生成的计划，并控制无人机执行具体动作。
-    *   使用较轻的 LLM 模型（如 ollama/qwen3:8b）进行快速响应和执行。
-    *   与 AirSim 仿真环境交互，执行起飞、降落、移动、转向等操作。
+## Core Components
 
-3.  **语义地图器 (Semantic Mapper)**
-    *   项目文档中提及，但当前代码中未实现具体功能。
-    *   预期功能是将环境信息映射为图结构 JSON，为规划器提供环境信息支持。
+### Planner (`planner/planner.py`)
+- **Purpose**: Transforms user tasks into structured mission plans
+- **Model**: `qwen3:32b` via Ollama at `http://localhost:11434/v1`
+- **Process**:
+  - Receives natural language tasks from `main.py`
+  - Uses Socratic Q&A reasoning to decompose tasks
+  - Outputs JSON plans with mission, current_step, and to_do_list
+- **Key Methods**:
+  - `generate_plan(task)`: Creates structured mission plan
 
-## 主要依赖
+### Actor (`agent/actor.py`)
+- **Purpose**: Executes mission plans in AirSim environment
+- **Model**: `ollama/qwen3:8b` via Ollama at `http://localhost:11434`
+- **Framework**: Built with `smolagents` for tool calling capabilities
+- **Key Methods**:
+  - `run(plan)`: Executes mission plan step-by-step
 
-*   **AirSim**: 用于无人机仿真环境。
-*   **Ollama**: 用于运行本地 LLM 模型。
-*   **smolagents**: 用于构建 LLM 驱动的代理和工具。
-*   **OpenAI Python SDK**: 用于与 Ollama 提供的 LLM API 交互。
+### AirSim Wrapper (`agent/airsim_wrapper.py`)
+- **Purpose**: Provides tool functions for UAV actions
+- **Available Actions**:
+  - `take_off_vehicle(vehicle_name)`: Launch drone
+  - `land_vehicle(vehicle_name)`: Land drone
+  - `move_vehicle_to(point, vehicle_name)`: Move to coordinates
+  - `turn_to(yaw, vehicle_name)`: Rotate to angle
+  - `inspect(visual_query, vehicle_name, camera_name)`: Analyze environment with VLM
+  - `look_for(object_name, camera_name, vehicle_name)`: Detect objects
 
-# 构建与运行
+## System Workflow
 
-## 环境准备
+1. **User Input**: Task entered via `main.py`
+2. **Planning Phase**:
+   - `UAVPlanner` processes task with `qwen3:32b`
+   - Generates JSON plan with Socratic reasoning
+3. **Execution Phase**:
+   - `UAVAgent` receives plan
+   - Processes plan with `ollama/qwen3:8b`
+   - Executes actions via AirSim API
+4. **Environment Interaction**: Actions performed through `airsim_wrapper.py` tools
 
-1.  安装并运行 [AirSim](https://microsoft.github.io/AirSim/) 仿真环境。
-2.  安装并运行 [Ollama](https://ollama.com/)，并拉取所需的模型：
-    *   `qwen3:32b` (用于规划器)
-    *   `qwen3:8b` (用于执行器)
-    *   `qwen2.5vl:7b` (用于视觉理解，如果需要)
-3.  安装 Python 依赖项 (根据代码推断，可能需要 `requirements.txt`，但当前未提供):
-    *   `openai`
-    *   `smolagents`
-    *   `airsim`
-    *   `numpy`
-    *   `opencv-python`
+## Setup Requirements
 
-## 运行项目
+1. **AirSim**: Running simulation environment
+2. **Ollama**: Serving LLMs locally with models:
+   - `ollama pull qwen3:32b` (planner)
+   - `ollama pull qwen3:8b` (actor)
+   - `ollama pull qwen2.5vl:7b` (vision, optional)
+3. **Python Dependencies**:
+   ```bash
+   pip install openai smolagents airsim numpy opencv-python
+   ```
 
-1.  确保 AirSim 和 Ollama 服务正在运行。
-2.  在项目根目录下执行主程序：
-    ```bash
-    python main.py
-    ```
-3.  根据提示输入任务指令，系统将自动生成计划并控制无人机执行。
+## Running the System
 
-## 测试
+1. Start AirSim environment
+2. Start Ollama service: `ollama serve`
+3. Run main application: `python main.py`
+4. Enter task when prompted
 
-*   项目包含一个测试文件 `test_planner_actor.py`，但具体内容未知。通常可以通过运行此文件来执行测试。
+## Key Implementation Details
 
-# 开发约定
+### Plan Structure
+```json
+{
+  "mission": "Task description",
+  "current_step": {
+    "description": "Next action description",
+    "action": {
+      "type": "takeoff|land|move_to|turn_to|inspect|look_for",
+      "parameters": "Action-specific parameters"
+    }
+  },
+  "to_do_list": ["Remaining subtasks"]
+}
+```
 
-*   **语言**: 主要使用 Python。
-*   **架构**: 采用计划-执行架构，分离高层规划与低层执行。
-*   **工具定义**: 使用 `smolagents` 的 `@tool` 装饰器定义可在执行器中调用的工具函数。
-*   **LLM 集成**: 使用 `openai` Python SDK 与 Ollama 提供的 LLM 服务交互。
-*   **代码结构**: 代码按功能模块划分到 `planner` 和 `agent` 目录中。
+### API Endpoints
+- Planner: `http://localhost:11434/v1` (with /v1 suffix)
+- Actor: `http://localhost:11434` (without /v1 suffix)
+
+### Naming Conventions
+- Object/vehicle names must be in English (e.g., "turbine1", "solarpanels")
+- Non-English names should be translated before processing
+
+## Testing
+
+- `test_planner_actor.py`: Integration tests for planning and execution
+- `agent/actor.py`: Contains basic execution test at file bottom

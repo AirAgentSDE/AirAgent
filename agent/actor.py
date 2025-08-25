@@ -30,20 +30,17 @@ if you get a name in other language, please translate it to English first.
         """ + "/no_think")
         return agent
     def run(self, prompt):
+        """
+        Execute a prompt with the UAV agent.
+        
+        Args:
+            prompt (str): The task description to execute
+            
+        Returns:
+            The result of the agent execution
+        """
         agent = self.initialize_agent()
-        if isinstance(prompt, str):
-            prompt = [prompt]
-        elif isinstance(prompt, dict):
-            # Check if the plan has the old format with 'plan' key
-            if 'plan' in prompt:
-                prompt = f"note your mission: {prompt['mission']}\n                given relevant_objects: {prompt['relevant_objects']}\n                what you should do: {prompt['reasoning']}\n                execute the following plan step by step: {prompt['plan']}"
-            # Check if the plan has the new format with 'subgoals' key
-            elif 'subgoals' in prompt:
-                prompt = f"note your mission: {prompt['mission']}\n                execute the following subgoals step by step: {prompt['subgoals']}"
-            else:
-                raise ValueError("Parsed prompt is not in a valid format. Expected 'plan' or 'subgoals' key in dict.")
-        else:
-            raise ValueError("Parsed prompt is not in a valid format. Expected str or dict.")
+        # Directly pass the string prompt to the agent
         return agent.run(prompt)
 
 

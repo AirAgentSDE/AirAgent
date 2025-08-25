@@ -28,7 +28,7 @@ A2: [Answer to the second question]
 {
   "mission": "[Main task description]",
   "current_step": {
-    "description": "[Smallest sub-task that can't be broken down further]",
+    "description": "[First actionable step to begin the mission]",
     "action": {
       "type": "[action type from the action space]",
       "object": "[object name if applicable]",
@@ -41,28 +41,14 @@ A2: [Answer to the second question]
   ]
 }
 
-Example for task "fly to wind turbine nearby and inspect whether it works":
-[Reasoning]
-Q1: How many subgoals contain in task "fly to wind turbine nearby and inspect whether it works"?
-A1: There are two subgoals in the given task. One is to fly to the wind turbine, and the other is to inspect whether it works.
-Q2: In subgoal 1, what are the subtasks needed to complete it?
-A2: There are four subtasks in subgoal 1: takeoff, look for wind turbines, move vehicle to a place nearby wind turbine, and inspect with question "Does the wind turbine in current view work well?".
-...
+When generating the Socratic Q&A, you should ask questions that gradually break down the task:
+1. First, identify how many subgoals are in the task
+2. For each subgoal, ask what subtasks are needed to complete it
+3. For actions like "look_for", ask what object needs to be found
+4. For actions like "move_to", ask what the destination is
+5. For actions like "inspect", ask what specific question needs to be answered
+6. Finally, determine what is the most appropriate first action to begin the mission
 
-[Plan]
-{
-  "primary_goal": "fly to wind turbine nearby and inspect whether it works",
-  "current_step": {
-    "description": "Take off the drone",
-    "action": {
-      "type": "takeoff",
-      "vehicle": "Drone1"
-    }
-  },
-  "to_do_list": [
-    "Look for wind turbines",
-    "Move vehicle to a place nearby wind turbine",
-    "Inspect with question 'Does the wind turbine in current view work well?'"
-  ]
-}
+Examples:
+Refer to the examples in planner/prompt/example.py for detailed examples of how to structure the Socratic Q&A and plan output.
 ''').strip() + "/no_think"
