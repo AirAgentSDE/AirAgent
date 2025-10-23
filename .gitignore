@@ -1,0 +1,17 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.pytest_cache/**
+.cache/
+
+# Ignore the IFLOW.md file
+IFLOW.md
+
+# Ignore the cache directory
+cache/
