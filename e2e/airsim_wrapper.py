@@ -3,14 +3,14 @@ import airsim
 import numpy as np
 import cv2
 import base64
-from typing import List, Tuple
+from typing import Tuple
 from openai import OpenAI
 import math
 import time
 
 
 
-# 已知地图
+# 地图
 objects_dict = {
     "turbine1": "BP_Wind_Turbines_C_1",
     "turbine2": "StaticMeshActor_2",
@@ -37,7 +37,7 @@ def get_airsim_client():
     """Get or create AirSim client with proper connection handling"""
     global _client
     if _client is None:
-        max_retries = 10
+        max_retries = 5
         retry_delay = 2
         
         for attempt in range(max_retries):
@@ -55,9 +55,6 @@ def get_airsim_client():
                     raise RuntimeError(f"Failed to connect to AirSim after {max_retries} attempts")
     
     return _client
-
-# Use a property-like approach for backward compatibility
-client = property(lambda self: get_airsim_client())
 
 
 @tool
@@ -178,55 +175,6 @@ def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_
             ]
         )
     return completion.choices[0].message.content
-
-
-# 物体检测, 使用Airsim自带的检测器
-@tool
-def detect(object_name: str, camera_name: str = "front_center", vehicle_name: str = "Drone1") -> dict:
-    """
-    查找指定目标物体的位置。
-
-    Args:
-        object_name: 目标物体名称
-        camera_name: 相机位置，默认为"front_center"
-        vehicle_name: 无人机名称，默认为"Drone1"
-        
-    """
-    airsim_client = get_airsim_client()
-    image_type = airsim.ImageType.Scene
-    try:
-        airsim_client.simSetDetectionFilterRadius(camera_name, image_type, radius_cm=20000, vehicle_name=vehicle_name)
-        airsim_client.simClearDetectionMeshNames(camera_name, image_type, vehicle_name)
-        airsim_client.simAddDetectionFilterMeshName(camera_name, image_type, mesh_name=f"*{object_name}*", vehicle_name=vehicle_name)
-        
-        objects = airsim_client.simGetDetections(camera_name, image_type, vehicle_name=vehicle_name)
-        
-        if objects:
-            # 取第一个检测到的对象
-            object = objects[0]
-            
-            relative_position = {
-                "x": object.relative_pose.position.x_val,
-                "y": object.relative_pose.position.y_val,
-                "z": object.relative_pose.position.z_val
-            }
-            
-            # 计算绝对位置
-            drone_state = airsim_client.getMultirotorState(vehicle_name=vehicle_name)
-            drone_position = drone_state.kinematics_estimated.position
-            position = {
-                "x": drone_position.x_val + relative_position["x"],
-                "y": drone_position.y_val + relative_position["y"],
-                "z": drone_position.z_val + relative_position["z"]
-            }
-            return position
-
-    finally:
-        # 清理检测过滤器，防止资源累积
-        airsim_client.simClearDetectionMeshNames(camera_name, image_type, vehicle_name)
-        time.sleep(2)
-
-    return f"cannot find {object_name}, try change to synonyms or inspect the object"
 
 
 @tool
