@@ -1,6 +1,6 @@
 from smolagents import CodeAgent, LiteLLMModel
 import airsim
-from airsim_wrapper import *
+from e2e.airsim_wrapper import *
 import json
 import math
 import numpy as np
@@ -9,15 +9,15 @@ from typing import Optional, Union
 
 
 class UAVAgent:
-    """UAV Agent for controlling drones in AirSim environment using natural language instructions."""
+    """用于在AirSim环境中使用自然语言指令控制无人机的UAV代理。"""
     
     def __init__(self, ollama_url: str = "http://localhost:11434", model_name: str = "ollama/qwen3-coder:latest"):
         """
-        Initialize the UAV agent with model configuration.
+        初始化UAV代理并配置模型。
         
         Args:
-            ollama_url: URL for the Ollama API endpoint
-            model_name: Name of the model to use for the agent
+            ollama_url: Ollama API端点的URL
+            model_name: 代理使用的模型名称
         """
         self.model = model_name
         self.api_base = ollama_url
@@ -25,10 +25,10 @@ class UAVAgent:
 
     def initialize_agent(self) -> CodeAgent:
         """
-        Initialize and configure the CodeAgent with tools and instructions.
+        初始化并配置CodeAgent，设置工具和指令。
         
         Returns:
-            Configured CodeAgent instance
+            配置好的CodeAgent实例
         """
         model = LiteLLMModel(
             model_id=self.model,
@@ -43,62 +43,63 @@ class UAVAgent:
             model=model, 
             stream_outputs=True,
             instructions="""
-# Role
-You are an intelligent UAV (Unmanned Aerial Vehicle) control agent responsible for parsing natural language instructions and executing precise UAV operations in the AirSim simulation environment.
-Your responsibility is to convert high-level task objectives into specific operational code using available tools.
-You need to execute tasks step by step.
+# 角色
+你是一个智能无人机(UAV)控制代理，负责解析自然语言指令并在AirSim模拟环境中执行精确的无人机操作。
+你的职责是将高级任务目标转换为使用可用工具的具体操作代码。
+你需要逐步执行任务。
 
-## Operation Guidelines and Best Practices
-### Naming Conventions
-- UAV names follow the "DroneX" format, where X starts from 1
-- Be specific with object names. Use English names, not Chinese.
-### Tool Selection
-- Do not call take_off_vehicle() or land_vehicle() unless explicitly requested
-- Do not use inspect() to locate objects; this tool is for answering environment investigation-related questions
-### Navigation Guidelines
-- When flying towards target objects, maintain a safe distance of -10 meters in the x-axis direction from the object
-### Target Localization
-- When needing to locate objects, use get_position() to get position, try 3 synonyms to avoid missing target names (e.g.: "person", "people", "crowd")
-### Task Completion
-- After completing the task, call final_answer() to return task results
+## 操作指南和最佳实践
+### 命名约定
+- 无人机名称遵循"DroneX"格式，其中X从1开始
+- 对象名称要具体，使用英文名称，不要使用中文
+### 工具选择
+- 除非明确要求，否则不要调用take_off_vehicle()或land_vehicle()
+- 不要使用inspect()来定位对象；该工具用于回答环境调查相关问题
+### 导航指南
+- 飞向目标对象时，在对象的x轴方向保持-10米的安全距离
+### 目标定位
+- 当需要定位对象时，使用get_position()获取位置，尝试3个同义词以避免错过目标名称（例如："person", "people", "crowd"）
+### 任务完成
+- 完成任务后，调用final_answer()返回任务结果
         """)
         return agent
     
     def run(self, prompt: str) -> Union[str, dict, None]:
         """
-        Execute the agent with the given prompt.
+        使用给定提示执行代理。
         
         Args:
-            prompt: Natural language instruction for the UAV
+            prompt: 无人机的自然语言指令
             
         Returns:
-            Observation/result from the agent execution
+            代理执行的观察结果/结果
             
         Raises:
-            Exception: If agent execution fails
+            Exception: 如果代理执行失败
         """
         try:
             agent = self.initialize_agent()
             observation = agent.run(prompt)
             return observation
         except Exception as e:
-            print(f"Error executing agent: {e}")
+            print(f"执行代理时出错: {e}")
             raise
 
-
+    def next(self):
+        reset()
 
 
 if __name__ == "__main__":
     try:
         test = UAVAgent()
         steps = [
-        "Two drones take off",
-        "Drone 1 moves to vehicle",
-        "Drone 2 moves to crowd"
+        "两架无人机起飞",
+        "无人机1移动到车辆",
+        "无人机2移动到人群"
         ]
         
         result = test.run("; ".join(steps))
-        print("Execution completed successfully")
-        print(f"Result: {result}")
+        print("执行成功完成")
+        print(f"结果: {result}")
     except Exception as e:
-        print(f"Failed to execute UAV agent: {e}")
+        print(f"执行任务{steps}失败: {e}")

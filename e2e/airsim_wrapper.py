@@ -10,7 +10,7 @@ import time
 
 
 
-# 地图
+# 地图对象字典
 objects_dict = {
     "turbine1": "BP_Wind_Turbines_C_1",
     "turbine2": "StaticMeshActor_2",
@@ -23,18 +23,16 @@ objects_dict = {
 }
 
 
-# 载入VLM模型
+# 载入视觉语言模型
 vlm_client = OpenAI(
     base_url = 'http://localhost:11434/v1',
     api_key = 'ollama', # required, but unused
 )
 
 
-# AirSim client - initialized lazily to ensure AirSim is running first
 _client = None
 
 def get_airsim_client():
-    """Get or create AirSim client with proper connection handling"""
     global _client
     if _client is None:
         max_retries = 5
@@ -44,15 +42,15 @@ def get_airsim_client():
             try:
                 _client = airsim.MultirotorClient()
                 _client.confirmConnection()
-                print("Successfully connected to AirSim")
+                print("成功连接到AirSim")
                 break
             except Exception as e:
-                print(f"AirSim connection attempt {attempt + 1} failed: {e}")
+                print(f"AirSim连接尝试 {attempt + 1} 失败: {e}")
                 if attempt < max_retries - 1:
-                    print(f"Retrying in {retry_delay} seconds...")
+                    print(f"{retry_delay}秒后重试...")
                     time.sleep(retry_delay)
                 else:
-                    raise RuntimeError(f"Failed to connect to AirSim after {max_retries} attempts")
+                    raise RuntimeError(f"经过 {max_retries} 次尝试后连接AirSim失败")
     
     return _client
 
@@ -137,8 +135,8 @@ def get_image(image_type=airsim.ImageType.Scene, camera_name='front_center', veh
     """获得前置摄像头渲染图像"""
     airsim_client = get_airsim_client()
     response = airsim_client.simGetImage(camera_name, image_type, vehicle_name)
-    img_bgr = cv2.imdecode(np.array(bytearray(response), dtype='uint8'), cv2.IMREAD_UNCHANGED) # BGR
-    img = cv2.cvtColor(img_bgr, cv2.COLOR_RGBA2RGB) # RGB
+    img_bgr = cv2.imdecode(np.array(bytearray(response), dtype='uint8'), cv2.IMREAD_UNCHANGED) # BGR格式
+    img = cv2.cvtColor(img_bgr, cv2.COLOR_RGBA2RGB) # 转换为RGB格式
     return img
 
 
@@ -155,10 +153,10 @@ def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_
    # 读取图像
     rgb_image = get_image(vehicle_name=vehicle_name, camera_name=camera_name)
     
-    # 转成base64格式的png图片
+    # 转换为base64格式的PNG图片
     base64_image = cv2_to_base64(rgb_image, ".png")
 
-    # 视觉理解
+    # 视觉理解处理
     completion = vlm_client.chat.completions.create(
             model="qwen2.5vl:7b",
             messages=[
@@ -180,26 +178,35 @@ def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_
 @tool
 def get_position(object_name: str)-> Tuple[float,float,float,float]:
     """
-    get the position of a specific object
+    获取特定对象的位置
     
     Args:
-        object_name: the name of the object
+        object_name: 对象名称
         
     Returns: 
-        Tuple[float,float,float,float]: position, the position of the object,点为三维坐标 (x, y, z)和偏航角（角度制）的元组
+        Tuple[float,float,float,float]: 对象位置，包含三维坐标 (x, y, z)和偏航角（角度制）的元组
     """
     airsim_client = get_airsim_client()
+    # 构建查询字符串
     query_string = objects_dict[object_name] + ".*"
     object_names_ue = []
+    # 循环查找对象直到找到为止
     while len(object_names_ue) == 0:
         object_names_ue = airsim_client.simListSceneObjects(query_string)
     try:
         pose = airsim_client.simGetObjectPose(object_names_ue[0])
     except Exception:
-        return "no such object, if you confirm the presence of the object, please try synonyms"
+        return "找不到该对象，如果确认对象存在，请尝试使用同义词"
     orientation_quat = pose.orientation
-    yaw = airsim.to_eularian_angles(orientation_quat)[2] # get the yaw angle
-    yaw_degree = math.degrees(yaw)
-
+    yaw = airsim.to_eularian_angles(orientation_quat)[2] # 获取偏航角
+    yaw_degree = math.degrees(yaw) # 转换为角度制
     
     return [pose.position.x_val, pose.position.y_val, pose.position.z_val, yaw_degree]
+
+
+def reset():
+    '''重置环境'''
+    airsim_client = get_airsim_client()
+    airsim_client.reset()
+    time.sleep(3)
+    print("系统已重置，请开始下一轮调试")
