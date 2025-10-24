@@ -146,7 +146,7 @@ def inspect(visual_query:str, vehicle_name:str="Drone1", camera_name:str="front_
     向视觉语言模型提问以获得更多环境信息或对象细节。
     
     Args:
-        visual_query: 提问内容
+        visual_query: 问题内容, 如“当前位置是否能够看到一辆蓝色汽车？”
         vehicle_name: 无人机名称，默认为"Drone1"
         camera_name: 摄像头名称，默认为'front_center' （前置中心摄像头）, 可选值包括'front_center', 'front_left', 'front_right', 'back_center', 'bottom_center'.
     """
