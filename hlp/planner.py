@@ -25,8 +25,8 @@ class UAVPlanner:
             ],
             api_base=self.base_url,
             stream=False,
-            temperature=0.2,
-            seed=42
+            temperature=0.4,
+            seed=0
         )
         
         return response.choices[0].message.content
