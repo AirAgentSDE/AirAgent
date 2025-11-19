@@ -128,7 +128,7 @@ if __name__ == "__main__":
             plan = planner.query_llm(task)
             print(f"\n计划结果: {plan}")
             agent.run(plan)
-            time.sleep(10)
+            time.sleep(20)
             agent.next()
                     
             
