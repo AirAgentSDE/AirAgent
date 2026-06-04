@@ -1,2 +1,1 @@
-not in developing
-停止开发
+This is a deprecated branch, only leave to keep the history of the project, the working branch is now [here](https://github.com/AirAgentSDE/AirAgent/tree/main).
